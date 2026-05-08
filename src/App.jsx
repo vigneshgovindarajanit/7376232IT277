@@ -92,10 +92,27 @@ const initialAuthForm = {
 
 function AppShell() {
   const [session, setSession] = useState(() => loadStoredSession())
+  const storedProfile = loadStoredSession()?.profile ?? {}
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [registerForm, setRegisterForm] = useState(initialRegistrationForm)
-  const [authForm, setAuthForm] = useState(initialAuthForm)
+  const [registerForm, setRegisterForm] = useState(() => ({
+    ...initialRegistrationForm,
+    email: storedProfile.email ?? '',
+    name: storedProfile.name ?? '',
+    mobileNo: storedProfile.mobileNo ?? '',
+    githubUsername: storedProfile.githubUsername ?? '',
+    rollNo: storedProfile.rollNo ?? '',
+    accessCode: storedProfile.accessCode ?? '',
+  }))
+  const [authForm, setAuthForm] = useState(() => ({
+    ...initialAuthForm,
+    email: storedProfile.email ?? '',
+    name: storedProfile.name ?? '',
+    rollNo: storedProfile.rollNo ?? '',
+    accessCode: storedProfile.accessCode ?? '',
+    clientID: storedProfile.clientID ?? '',
+    clientSecret: storedProfile.clientSecret ?? '',
+  }))
   const [authError, setAuthError] = useState('')
   const [authSuccess, setAuthSuccess] = useState('')
   const [authBusy, setAuthBusy] = useState(false)

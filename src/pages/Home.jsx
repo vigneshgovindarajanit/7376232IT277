@@ -20,6 +20,68 @@ import { fetchNotifications, logEvent } from '../services/api'
 
 const VIEWED_STORAGE_KEY = 'affordmed-viewed-notifications'
 const notificationTypes = ['All', 'Placement', 'Result', 'Event']
+const demoNotifications = [
+  {
+    ID: 'd146095a-0d86-4a34-9e69-3900a14576bc',
+    Type: 'Result',
+    Message: 'mid-sem',
+    Timestamp: '2026-04-22 17:51:30',
+  },
+  {
+    ID: 'b283218f-ea5a-4b7c-93a9-1f2f240d64b0',
+    Type: 'Placement',
+    Message: 'CSX Corporation hiring',
+    Timestamp: '2026-04-22 17:51:18',
+  },
+  {
+    ID: '81589ada-0ad3-4f77-9554-f52fb558e09d',
+    Type: 'Event',
+    Message: 'farewell',
+    Timestamp: '2026-04-22 17:51:06',
+  },
+  {
+    ID: '0005513a-142b-4bbc-8678-eefec65e1ede',
+    Type: 'Result',
+    Message: 'mid-sem',
+    Timestamp: '2026-04-22 17:50:54',
+  },
+  {
+    ID: 'ea836726-c25e-4f21-a72f-544a6af8a37f',
+    Type: 'Result',
+    Message: 'project-review',
+    Timestamp: '2026-04-22 17:50:42',
+  },
+  {
+    ID: '003cb427-8fc6-47f7-bb00-be228f6b0d2c',
+    Type: 'Result',
+    Message: 'external',
+    Timestamp: '2026-04-22 17:50:30',
+  },
+  {
+    ID: 'e5c4ff20-31bf-4d40-8f02-72fda59e8918',
+    Type: 'Result',
+    Message: 'project-review',
+    Timestamp: '2026-04-22 17:50:18',
+  },
+  {
+    ID: '1cfce5ee-ad37-4894-8946-d707627176a5',
+    Type: 'Event',
+    Message: 'tech-fest',
+    Timestamp: '2026-04-22 17:50:06',
+  },
+  {
+    ID: 'cf2885a6-45ac-4ba0-b548-6e9e9d4c52c8',
+    Type: 'Result',
+    Message: 'project-review',
+    Timestamp: '2026-04-22 17:49:54',
+  },
+  {
+    ID: '8a7412bd-6065-4d09-8501-a37f11cc848b',
+    Type: 'Placement',
+    Message: 'Advanced Micro Devices Inc. hiring',
+    Timestamp: '2026-04-22 17:49:42',
+  },
+]
 const priorityWeights = {
   Placement: 3,
   Result: 2,
@@ -57,6 +119,7 @@ export default function Home({ session, mode }) {
   const [viewedIds, setViewedIds] = useState(() => loadViewedIds())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [liveHasMore, setLiveHasMore] = useState(false)
 
   useEffect(() => {
     if (!session?.accessToken) return
@@ -77,6 +140,7 @@ export default function Home({ session, mode }) {
 
         if (!cancelled) {
           setNotifications(items)
+          setLiveHasMore(mode === 'priority' ? false : items.length === limit)
         }
 
         void logEvent({
@@ -88,6 +152,7 @@ export default function Home({ session, mode }) {
       } catch (fetchError) {
         if (!cancelled) {
           setError(fetchError.message)
+          setLiveHasMore(false)
         }
 
         void logEvent({
@@ -116,36 +181,58 @@ export default function Home({ session, mode }) {
 
   const rankedNotifications = useMemo(
     () =>
-      [...notifications].sort((left, right) => getPriorityScore(right) - getPriorityScore(left)),
-    [notifications],
+      [...(session?.accessToken ? notifications : demoNotifications)].sort(
+        (left, right) => getPriorityScore(right) - getPriorityScore(left),
+      ),
+    [notifications, session?.accessToken],
   )
 
-  const visibleNotifications = useMemo(() => {
-    if (!session?.accessToken) {
-      return []
+  const sourceNotifications = useMemo(() => {
+    if (session?.accessToken) {
+      return notifications
     }
 
+    const filtered = demoNotifications.filter((notification) =>
+      filter === 'All' ? true : notification.Type === filter,
+    )
+
+    if (mode === 'priority') {
+      return filtered
+    }
+
+    const start = (page - 1) * limit
+    const end = start + limit
+    return filtered.slice(start, end)
+  }, [filter, limit, mode, notifications, page, session?.accessToken])
+
+  const hasMore = useMemo(() => {
+    if (session?.accessToken) {
+      return liveHasMore
+    }
+
+    if (mode === 'priority') {
+      return false
+    }
+
+    const filtered = demoNotifications.filter((notification) =>
+      filter === 'All' ? true : notification.Type === filter,
+    )
+
+    return page * limit < filtered.length
+  }, [filter, limit, liveHasMore, mode, page, session?.accessToken])
+
+  const visibleNotifications = useMemo(() => {
     if (mode === 'priority') {
       return rankedNotifications
         .filter((notification) => !viewedIds.includes(notification.ID))
         .slice(0, topN)
     }
 
-    return notifications
-  }, [mode, notifications, rankedNotifications, session?.accessToken, topN, viewedIds])
+    return sourceNotifications
+  }, [mode, rankedNotifications, sourceNotifications, topN, viewedIds])
 
   const summary = useMemo(() => {
-    if (!session?.accessToken) {
-      return {
-        total: 0,
-        unread: 0,
-        placement: 0,
-        result: 0,
-        event: 0,
-      }
-    }
-
-    const source = mode === 'priority' ? rankedNotifications : notifications
+    const source = mode === 'priority' ? rankedNotifications : sourceNotifications
 
     return {
       total: source.length,
@@ -154,7 +241,7 @@ export default function Home({ session, mode }) {
       result: source.filter((item) => item.Type === 'Result').length,
       event: source.filter((item) => item.Type === 'Event').length,
     }
-  }, [mode, notifications, rankedNotifications, session?.accessToken, viewedIds])
+  }, [mode, rankedNotifications, sourceNotifications, viewedIds])
 
   function markViewed(id) {
     setViewedIds((current) => (current.includes(id) ? current : [...current, id]))
@@ -248,9 +335,9 @@ export default function Home({ session, mode }) {
         </Paper>
 
         {!session?.accessToken ? (
-          <Alert severity="warning">
-            Connect the assessment API first. The notifications and logging endpoints require a
-            bearer token.
+          <Alert severity="info" sx={{ mb: 3 }}>
+            You are currently seeing demo notifications from the assessment brief. Connect the API
+            with your own credentials to switch to the protected live feed.
           </Alert>
         ) : null}
 
@@ -262,7 +349,7 @@ export default function Home({ session, mode }) {
 
         {loading ? <Loader label="Loading notifications..." /> : null}
 
-        {!loading && session?.accessToken ? (
+        {!loading ? (
           <Stack spacing={2}>
             {visibleNotifications.length ? (
               visibleNotifications.map((notification, index) => (
@@ -296,15 +383,23 @@ export default function Home({ session, mode }) {
           </Stack>
         ) : null}
 
-        {mode === 'all' && session?.accessToken ? (
+        {mode === 'all' ? (
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 3 }}>
             <Typography color="text.secondary">Page {page}</Typography>
-            <Pagination
-              color="primary"
-              page={page}
-              count={10}
-              onChange={(_, value) => setPage(value)}
-            />
+            <Stack direction="row" spacing={1}>
+              <Button disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
+                Previous
+              </Button>
+              <Pagination
+                color="primary"
+                page={page}
+                count={hasMore ? page + 1 : page}
+                onChange={(_, value) => setPage(value)}
+              />
+              <Button disabled={!hasMore} onClick={() => setPage((current) => current + 1)}>
+                Next
+              </Button>
+            </Stack>
           </Stack>
         ) : null}
 

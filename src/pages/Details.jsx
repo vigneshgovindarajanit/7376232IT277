@@ -76,10 +76,6 @@ export default function Details({ session }) {
     }
   }, [notification, session?.accessToken])
 
-  if (!session?.accessToken) {
-    return <Alert severity="warning">Connect the API first to inspect notification details.</Alert>
-  }
-
   if (loading) {
     return <Loader label="Loading notification details..." />
   }
@@ -89,6 +85,14 @@ export default function Details({ session }) {
   }
 
   if (!notification) {
+    if (!session?.accessToken) {
+      return (
+        <Alert severity="warning">
+          Connect the API first to inspect notification details.
+        </Alert>
+      )
+    }
+
     return <Alert severity="info">Notification details are unavailable.</Alert>
   }
 
@@ -150,7 +154,8 @@ export default function Details({ session }) {
             </Typography>
             <Typography>
               <strong>Description:</strong> This item came from the protected campus notification
-              feed and was opened from the frontend assessment dashboard.
+              feed and was opened from the frontend assessment dashboard. The card is marked as
+              viewed as soon as you open this page.
             </Typography>
           </Stack>
         </Paper>
