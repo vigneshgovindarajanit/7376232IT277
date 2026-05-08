@@ -1,16 +1,57 @@
-# React + Vite
+# Frontend Assessment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This frontend implements the Stage 2 campus notifications assessment in React with Material UI.
 
-Currently, two official plugins are available:
+## What is included
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `All Notifications` page with protected API fetch, type filter, page size control, and pagination UI
+- `Priority Inbox` page with top `n` unread notifications ranked by `Placement > Result > Event`, then by recency
+- Persistent `viewed` vs `new` notification state using `localStorage`
+- Notification details page
+- Registration, authentication, and logging integration for the Affordmed protected APIs
+- Vite dev server configured to run on `http://localhost:3000`
 
-## React Compiler
+## Run locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Open the project folder:
+   `cd frontend`
+2. Install dependencies:
+   `npm install`
+3. Start the app:
+   `npm run dev`
+4. Open:
+   `http://localhost:3000`
 
-## Expanding the ESLint configuration
+## Assessment flow
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Click `Connect API`.
+2. Register once using your own:
+   - college email
+   - name
+   - mobile number
+   - GitHub username
+   - roll number
+   - access code from the assessment email
+3. Save the returned `clientID` and `clientSecret`.
+4. Authenticate with the same values to generate a bearer token.
+5. Use the app pages:
+   - `/` for all notifications
+   - `/priority` for the ranked unread priority inbox
+
+## Required submission checklist
+
+1. Keep this frontend inside the same GitHub repository.
+2. Record a video showing:
+   - desktop view
+   - mobile responsive view
+   - registration/authentication flow
+   - all notifications page
+   - priority inbox page
+   - viewed vs new state
+   - filters and top `n` control
+3. Commit frequently instead of doing a single final commit.
+
+## Validation
+
+- `npm run lint`
+- `npm run build`
